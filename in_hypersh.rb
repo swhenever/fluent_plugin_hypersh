@@ -39,9 +39,10 @@ module Fluent::Plugin
         t = Thread.new { 
           IO.popen("hyper logs --since='1s' -t -f #{container_id}") do |io|
             while (line = io.gets) do
-              time = Fluent::Engine.now # TODO parse timestamp from line
+              time = DateTime.rfc3339(line.split(' ')[0]).to_time
+              fluent_time = Fluent::EventTime.new(time.to_i, time.nsec)
               record = {"message"=>line}
-              router.emit(tag, time, record)
+              router.emit(tag, fluent_time, record)
             end
           end
         }
